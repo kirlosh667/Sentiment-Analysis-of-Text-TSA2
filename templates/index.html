@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NLP Sentiment Analysis Web Application built with Python Flask and NLTK VADER for college NLP lab experiments.">
+    <title>NLP Sentiment Analyzer | Flask & NLTK VADER</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-background">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-badge">
+                <i class="fa-solid fa-brain-circuit"></i>
+            </div>
+            <h1>NLP Sentiment Analyzer</h1>
+            <p class="subtitle">Natural Language Processing Lab Experiment &bull; Powered by Python Flask & NLTK VADER</p>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Left Card: Input Panel -->
+            <section class="card input-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-pen-to-square"></i> Text Input</h2>
+                    <span class="badge badge-lab">NLP Lab Test Suite</span>
+                </div>
+
+                <!-- Sample Text Selector Chips -->
+                <div class="sample-section">
+                    <span class="sample-label"><i class="fa-solid fa-vial"></i> Sample Texts:</span>
+                    <div class="sample-chips">
+                        <button type="button" class="chip" data-sample="positive">
+                            <span class="dot dot-pos"></span> Positive Review
+                        </button>
+                        <button type="button" class="chip" data-sample="negative">
+                            <span class="dot dot-neg"></span> Negative Feedback
+                        </button>
+                        <button type="button" class="chip" data-sample="neutral">
+                            <span class="dot dot-neu"></span> Neutral Statement
+                        </button>
+                        <button type="button" class="chip" data-sample="mixed">
+                            <span class="dot dot-mix"></span> Mixed / Complex
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Area Input Form -->
+                <form id="sentimentForm" novalidate>
+                    <div class="textarea-wrapper">
+                        <textarea 
+                            id="inputText" 
+                            name="text" 
+                            rows="6" 
+                            placeholder="Type or paste a sentence, paragraph, product review, or feedback text here..."
+                            maxlength="5000"
+                        ></textarea>
+                        
+                        <div class="textarea-footer">
+                            <button type="button" id="clearBtn" class="btn-text" title="Clear text">
+                                <i class="fa-solid fa-eraser"></i> Clear Text
+                            </button>
+                            <div class="text-counts">
+                                <span id="wordCount">0 words</span> &bull; 
+                                <span id="charCount">0/5000 chars</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert Box -->
+                    <div id="errorAlert" class="alert alert-error" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="errorMessage">Please enter a sentence or paragraph to analyze.</span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="analyzeBtn" class="btn btn-primary">
+                        <span class="btn-text-content">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Sentiment
+                        </span>
+                        <div class="spinner" style="display: none;"></div>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Right Card: Output / Results Panel -->
+            <section class="card result-card" id="resultSection">
+                <!-- Initial Placeholder State -->
+                <div id="placeholderState" class="placeholder-content">
+                    <div class="placeholder-icon">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <h3>Analysis Results</h3>
+                    <p>Enter text on the left and click <strong>"Analyze Sentiment"</strong> to classify sentiment polarity, confidence score, and raw VADER scores.</p>
+                </div>
+
+                <!-- Active Result Display (Hidden initially) -->
+                <div id="resultContent" class="result-content" style="display: none;">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-chart-column"></i> Sentiment Analysis Output</h2>
+                        <span class="badge badge-success" id="resultStatusTag">Analyzed</span>
+                    </div>
+
+                    <!-- Main Classification Hero Banner -->
+                    <div id="sentimentBanner" class="sentiment-banner">
+                        <div class="sentiment-emoji-wrapper">
+                            <span id="sentimentEmoji" class="sentiment-emoji">😊</span>
+                        </div>
+                        <div class="sentiment-meta">
+                            <span class="meta-title">PREDICTED SENTIMENT</span>
+                            <h3 id="sentimentLabel" class="sentiment-label">Positive</h3>
+                        </div>
+                        <div class="confidence-pill">
+                            <span class="confidence-title">Confidence</span>
+                            <span id="confidenceValue" class="confidence-number">92.5%</span>
+                        </div>
+                    </div>
+
+                    <!-- Confidence Meter Bar -->
+                    <div class="meter-container">
+                        <div class="meter-label">
+                            <span>Confidence Score</span>
+                            <span id="confidenceBarText">92.5%</span>
+                        </div>
+                        <div class="meter-track">
+                            <div id="confidenceBarFill" class="meter-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- VADER Score Distribution -->
+                    <div class="scores-grid">
+                        <div class="score-card score-pos">
+                            <div class="score-icon"><i class="fa-solid fa-face-smile"></i></div>
+                            <div class="score-info">
+                                <span class="score-title">Positive</span>
+                                <span id="posScore" class="score-value">0%</span>
+                            </div>
+                        </div>
+                        <div class="score-card score-neu">
+                            <div class="score-icon"><i class="fa-solid fa-face-meh"></i></div>
+                            <div class="score-info">
+                                <span class="score-title">Neutral</span>
+                                <span id="neuScore" class="score-value">0%</span>
+                            </div>
+                        </div>
+                        <div class="score-card score-neg">
+                            <div class="score-icon"><i class="fa-solid fa-face-frown"></i></div>
+                            <div class="score-info">
+                                <span class="score-title">Negative</span>
+                                <span id="negScore" class="score-value">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed NLP Metrics Card -->
+                    <div class="nlp-details-box">
+                        <div class="nlp-details-title">
+                            <i class="fa-solid fa-microscope"></i> NLP Metric Breakdown (VADER & TextBlob)
+                        </div>
+                        <div class="nlp-metrics-row">
+                            <div class="metric-item">
+                                <span class="metric-label" title="Normalized compound score from VADER (-1.0 to +1.0)">VADER Compound</span>
+                                <span id="compoundScore" class="metric-val">+0.850</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label" title="TextBlob polarity metric (-1.0 to +1.0)">TextBlob Polarity</span>
+                                <span id="tbPolarity" class="metric-val">+0.620</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label" title="TextBlob subjectivity metric (0.0 objective to 1.0 subjective)">Subjectivity</span>
+                                <span id="tbSubjectivity" class="metric-val">0.750</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Stats Footer -->
+                    <div class="stats-row">
+                        <span><i class="fa-solid fa-align-left"></i> <strong id="statWords">0</strong> words</span>
+                        <span><i class="fa-solid fa-font"></i> <strong id="statChars">0</strong> characters</span>
+                        <span><i class="fa-solid fa-quote-left"></i> <strong id="statSentences">0</strong> sentence(s)</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Designed for College NLP Lab Experiments &bull; Python 3 &bull; Flask API &bull; NLTK VADER Lexicon</p>
+        </footer>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
